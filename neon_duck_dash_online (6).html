@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Duck Dash Online</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
+        :root {
+            --neon-blue: #00f3ff;
+            --neon-pink: #ff00ff;
+            --neon-yellow: #fdf500;
+            --dark-bg: #030308;
+            --panel-bg: rgba(8, 8, 16, 0.95);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            background-color: var(--dark-bg);
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #gameCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            display: none;
+        }
+
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+            background: radial-gradient(circle, rgba(12, 8, 24, 0.65) 0%, rgba(3, 3, 5, 0.95) 100%);
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 3px solid var(--neon-blue);
+            border-radius: 20px;
+            padding: 35px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.35), inset 0 0 20px rgba(0, 243, 255, 0.15);
+            pointer-events: auto;
+            max-width: 90%;
+            width: 460px;
+            max-height: 95vh;
+            overflow-y: auto;
+        }
+
+        h1 {
+            color: var(--neon-pink);
+            text-shadow: 0 0 10px var(--neon-pink), 0 0 25px var(--neon-pink);
+            font-size: 2.3rem;
+            line-height: 1.2;
+            font-weight: 900;
+            margin-bottom: 5px;
+        }
+
+        h2 {
+            color: var(--neon-blue);
+            text-shadow: 0 0 8px var(--neon-blue);
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        .story-box {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 0, 255, 0.25);
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            color: #d1d1e0;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .story-highlight {
+            color: var(--neon-yellow);
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(253, 245, 0, 0.3);
+        }
+
+        input {
+            width: 100%;
+            padding: 14px;
+            margin-bottom: 15px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid var(--neon-blue);
+            color: var(--neon-blue);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            outline: none;
+            text-align: center;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            box-shadow: 0 0 15px var(--neon-blue);
+            border-color: #fff;
+        }
+
+        button {
+            width: 100%;
+            padding: 16px;
+            margin-bottom: 12px;
+            background: transparent;
+            border: 2px solid var(--neon-pink);
+            color: var(--neon-pink);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.15rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            box-shadow: 0 0 12px rgba(255, 0, 255, 0.15);
+        }
+
+        button:hover, button:active {
+            background: var(--neon-pink);
+            color: #000;
+            box-shadow: 0 0 25px var(--neon-pink), 0 0 50px var(--neon-pink);
+        }
+
+        button:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            border-color: #444;
+            color: #444;
+            box-shadow: none;
+        }
+
+        .btn-blue {
+            border-color: var(--neon-blue);
+            color: var(--neon-blue);
+            box-shadow: 0 0 12px rgba(0, 243, 255, 0.15);
+        }
+
+        .btn-blue:hover, .btn-blue:active {
+            background: var(--neon-blue);
+            color: #000;
+            box-shadow: 0 0 25px var(--neon-blue), 0 0 50px var(--neon-blue);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        #players-list {
+            list-style: none;
+            margin-bottom: 20px;
+            text-align: left;
+            max-height: 180px;
+            overflow-y: auto;
+            border: 2px solid rgba(0, 243, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        #players-list li {
+            padding: 12px;
+            border-bottom: 1px solid rgba(0, 243, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+
+        .ready-text { color: var(--neon-yellow); font-weight: bold; text-shadow: 0 0 5px rgba(253, 245, 0, 0.5); }
+        .host-text { color: var(--neon-pink); font-size: 0.75rem; font-weight: 900; }
+
+        /* Game HUD */
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+            display: none;
+            padding: 15px;
+        }
+
+        .hud-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            width: 100%;
+        }
+
+        #timer {
+            font-size: 2.2rem;
+            color: var(--neon-yellow);
+            text-shadow: 0 0 12px var(--neon-yellow);
+            font-weight: 900;
+            background: rgba(5, 5, 10, 0.8);
+            padding: 8px 18px;
+            border-radius: 10px;
+            border: 2px solid var(--neon-yellow);
+        }
+
+        #leaderboard {
+            background: rgba(5, 5, 10, 0.85);
+            border: 2px solid var(--neon-blue);
+            border-radius: 12px;
+            padding: 12px;
+            min-width: 190px;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.25);
+        }
+
+        #leaderboard h3 {
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+            color: var(--neon-blue);
+            border-bottom: 2px solid rgba(0, 243, 255, 0.3);
+            padding-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        #leaderboard-list {
+            list-style: none;
+            font-size: 0.85rem;
+        }
+
+        #leaderboard-list li {
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        #event-banner {
+            position: absolute;
+            top: 22%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.8rem;
+            color: var(--neon-pink);
+            text-shadow: 0 0 15px var(--neon-pink), 0 0 30px var(--neon-pink);
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.4s;
+            background: rgba(0,0,0,0.85);
+            padding: 12px 28px;
+            border-radius: 30px;
+            border: 2px solid var(--neon-pink);
+            font-weight: 900;
+        }
+
+        /* Combined Control HUD / Indicators */
+        #controls-info-hud {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 6;
+            display: none;
+            pointer-events: none;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            border-radius: 12px;
+            padding: 8px 16px;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        /* Mobile Controls Overlay */
+        #mobile-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 200px;
+            pointer-events: none;
+            z-index: 6;
+            display: none;
+        }
+
+        /* True Multi-Touch Joystick Zone */
+        #joystick-zone {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            background: rgba(0, 243, 255, 0.08);
+            border: 3px solid rgba(0, 243, 255, 0.25);
+            pointer-events: auto;
+        }
+
+        #joystick-knob {
+            position: absolute;
+            top: 42px;
+            left: 42px;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            background: var(--neon-blue);
+            box-shadow: 0 0 20px var(--neon-blue);
+            pointer-events: none;
+        }
+
+        /* True Multi-Touch Dash Button */
+        #mobile-dash-btn {
+            position: absolute;
+            bottom: 35px;
+            right: 35px;
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: rgba(255, 0, 255, 0.1);
+            border: 4px solid var(--neon-pink);
+            color: var(--neon-pink);
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 1.1rem;
+            pointer-events: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.25);
+        }
+
+        #mobile-dash-btn.pressed {
+            background: var(--neon-pink);
+            color: #000;
+            box-shadow: 0 0 35px var(--neon-pink);
+        }
+
+        #connection-status {
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+            font-size: 0.75rem;
+            color: var(--neon-blue);
+            background: rgba(0, 0, 0, 0.6);
+            padding: 4px 12px;
+            border-radius: 10px;
+            z-index: 15;
+            border: 1px solid rgba(0, 243, 255, 0.2);
+        }
+
+        .pulse {
+            animation: pulse-anim 2s infinite;
+        }
+
+        @keyframes pulse-anim {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        #error-msg {
+            color: #ff3333;
+            margin-top: 12px;
+            font-size: 0.85rem;
+            min-height: 1.2em;
+            text-shadow: 0 0 5px rgba(255, 51, 51, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- UI Layer -->
+    <div class="ui-layer" id="ui-layer">
+        
+        <!-- Main Menu -->
+        <div class="panel" id="main-menu">
+            <h1>NEON DUCK DASH</h1>
+            <p style="margin-bottom: 15px; color: var(--neon-yellow); font-size: 0.9rem; font-weight: bold; letter-spacing: 1.5px;">CYBERPUNK MULTIPLAYER ARENA</p>
+            
+            <!-- Game Concept/Story -->
+            <div class="story-box">
+                <span class="story-highlight">THE MISSION:</span> Cyber-pond systems are losing integrity. Recharge the grid by collecting glowing <span class="story-highlight">Plasma Batteries</span>.
+                <br><br>
+                <span class="story-highlight">LAPTOP CONTROLS:</span> Use <span class="story-highlight">WASD / Arrows</span> to glide. Hit <span class="story-highlight">SPACEBAR</span> to activate your thrusters.
+                <br><br>
+                <span class="story-highlight">MOBILE CONTROLS:</span> Slide the left virtual joystick to steer. Tap the right <span class="story-highlight">DASH</span> button to boost.
+            </div>
+
+            <input type="text" id="player-name" placeholder="Enter Cyber-Duck Name" maxlength="12">
+            <button id="btn-create-room" disabled>Connecting...</button>
+            <div style="margin: 10px 0; font-size: 0.8rem; color: #555; letter-spacing: 2px;">-- OR JOIN ROOM --</div>
+            <input type="text" id="room-code-input" placeholder="6-Letter Room Code" maxlength="6" style="text-transform: uppercase;">
+            <button class="btn-blue" id="btn-join-room" disabled>Connecting...</button>
+            <div id="error-msg"></div>
+        </div>
+
+        <!-- Lobby Menu -->
+        <div class="panel hidden" id="lobby-menu">
+            <h2>Waiting Room</h2>
+            <p style="margin-bottom: 5px;">Secure Room Code:</p>
+            <strong id="display-room-code" style="color: var(--neon-yellow); font-size: 1.8rem; letter-spacing: 5px; text-shadow: 0 0 10px rgba(253, 245, 0, 0.4);"></strong>
+            <div>
+                <button class="btn-blue" id="btn-copy-code" style="padding: 10px; font-size: 0.85rem; margin-top: 10px; width: auto; display: inline-block;">Copy Code</button>
+            </div>
+            
+            <h3 style="margin-top: 25px; font-size: 1.1rem; color: var(--neon-blue);">Connected Ducks</h3>
+            <ul id="players-list"></ul>
+
+            <button id="btn-start-match" class="hidden pulse">Launch Match</button>
+            <button class="btn-blue" id="btn-ready">Toggle Ready State</button>
+            <button class="btn-blue" id="btn-leave-room" style="margin-top: 10px; font-size: 0.85rem; border-color: #555; color: #aaa;">Leave Server</button>
+        </div>
+
+        <!-- Victory Screen -->
+        <div class="panel hidden" id="victory-screen">
+            <h1>Match Concluded</h1>
+            <p style="color: var(--neon-yellow); margin-bottom: 5px;">WINNER OF THE GRID:</p>
+            <h2 id="winner-name" style="color: var(--neon-blue); font-size: 2.2rem; margin-bottom: 20px;"></h2>
+            
+            <h3 style="font-size: 1rem; color: var(--neon-pink); border-bottom: 1px solid rgba(255,0,255,0.2); padding-bottom: 5px;">Grid Scoreboard</h3>
+            <ul id="final-scores" style="list-style: none; margin-bottom: 25px; text-align: left; padding: 10px; background: rgba(0,0,0,0.4); border-radius: 5px;"></ul>
+            <button id="btn-back-to-lobby">Back to Lobby</button>
+        </div>
+
+    </div>
+
+    <!-- Game HUD -->
+    <div id="hud">
+        <div class="hud-top">
+            <div id="leaderboard">
+                <h3>Cyber Scoreboard</h3>
+                <ul id="leaderboard-list"></ul>
+            </div>
+            <div id="timer">3:00</div>
+        </div>
+        <div id="event-banner">EVENT!</div>
+    </div>
+
+    <!-- Mobile Virtual Controls -->
+    <div id="mobile-controls">
+        <div id="joystick-zone">
+            <div id="joystick-knob"></div>
+        </div>
+        <div id="mobile-dash-btn">DASH</div>
+    </div>
+
+    <!-- Combined Laptop/Mobile Control Info Indicator -->
+    <div id="controls-info-hud">
+        <span id="controls-indicator-text">Controls Active</span>
+    </div>
+
+    <div id="connection-status">Establishing connection...</div>
+
+    <!-- Game Canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Firebase Imports & Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue, update, remove, onDisconnect, get, child, off } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        // Realtime Database Configuration (Exact)
+        const firebaseConfig = {
+            apiKey: "AIzaSyB_cZ3djaTfYbwanJ_XA62HeDs8MkTm0iA",
+            authDomain: "multi-online-game.firebaseapp.com",
+            databaseURL: "https://multi-online-game-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "multi-online-game",
+            storageBucket: "multi-online-game.firebasestorage.app",
+            messagingSenderId: "654755025514",
+            appId: "1:654755025514:web:b09bc4fbe88e48e3e4b013",
+            measurementId: "G-V8HE26C2KK"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        const btnCreate = document.getElementById('btn-create-room');
+        const btnJoin = document.getElementById('btn-join-room');
+        const mobileControls = document.getElementById('mobile-controls');
+        const controlsInfoHud = document.getElementById('controls-info-hud');
+        const controlsIndicatorText = document.getElementById('controls-indicator-text');
+
+        // State System
+        let myId = "duck_" + Math.random().toString(36).substr(2, 9);
+        let myName = "";
+        let currentRoom = null;
+        let roomHostId = null;
+        let isHost = false;
+        let gameState = 'menu'; // menu, lobby, playing, gameover
+        let roomRef = null;
+        let myPlayerRef = null;
+        let players = {};
+        let batteries = {};
+        let currentEvent = 'normal';
+        let matchEndTime = 0;
+        let dbListeners = []; 
+
+        const neonColors = ['#00f3ff', '#ff00ff', '#fdf500', '#00ff00', '#ff5500'];
+        let myColor = neonColors[Math.floor(Math.random() * neonColors.length)];
+
+        // Force secure authentication
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                btnCreate.disabled = false;
+                btnJoin.disabled = false;
+                btnCreate.innerText = "Create Room";
+                btnJoin.innerText = "Join Room";
+                document.getElementById('connection-status').innerText = "Connected to Grid";
+            }
+        });
+
+        signInAnonymously(auth).catch((error) => {
+            console.error("Auth Error:", error);
+            document.getElementById('error-msg').innerText = "Connection initialization failed. Re-trying...";
+        });
+
+        // --- Audio Synthesizer (Web Audio API) ---
+        let audioCtx;
+        let isAudioInit = false;
+
+        function initAudio() {
+            if (isAudioInit) return;
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                isAudioInit = true;
+                startBGM();
+            } catch (e) {
+                console.warn("Audio Context init error:", e);
+            }
+        }
+
+        function playTone(freq, type, duration, vol = 0.1) {
+            if (!audioCtx || audioCtx.state === 'suspended') return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function sfxCollect() { 
+            playTone(587.33, 'sine', 0.08, 0.15); // D5
+            setTimeout(() => playTone(880, 'sine', 0.12, 0.15), 60); // A5
+        }
+        function sfxDash() { 
+            playTone(180, 'sawtooth', 0.12, 0.12); 
+            setTimeout(() => playTone(380, 'triangle', 0.1, 0.08), 40);
+        }
+        function sfxJump() { playTone(280, 'triangle', 0.25, 0.15); }
+        function sfxEvent() { 
+            playTone(150, 'sawtooth', 0.5, 0.2); 
+            setTimeout(() => playTone(90, 'sawtooth', 0.8, 0.2), 180); 
+        }
+        
+        let bgmInterval;
+        function startBGM() {
+            if (bgmInterval) clearInterval(bgmInterval);
+            let idx = 0;
+            const seq = [110, 110, 164.81, 110, 220, 164.81, 110, 98];
+            bgmInterval = setInterval(() => {
+                if (gameState === 'playing' && audioCtx) {
+                    playTone(seq[idx % seq.length], 'sawtooth', 0.15, 0.025);
+                    idx++;
+                }
+            }, 180);
+        }
+
+        // --- DOM Elements & Handlers ---
+        const uiLayer = document.getElementById('ui-layer');
+        const mainMenu = document.getElementById('main-menu');
+        const lobbyMenu = document.getElementById('lobby-menu');
+        const victoryScreen = document.getElementById('victory-screen');
+        const hud = document.getElementById('hud');
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const errorMsg = document.getElementById('error-msg');
+        const displayRoomCode = document.getElementById('display-room-code');
+        const playersList = document.getElementById('players-list');
+        const btnStartMatch = document.getElementById('btn-start-match');
+        const joystickZone = document.getElementById('joystick-zone');
+        const joystickKnob = document.getElementById('joystick-knob');
+        const eventBanner = document.getElementById('event-banner');
+
+        function showError(msg) {
+            errorMsg.innerText = msg;
+            setTimeout(() => { if(errorMsg.innerText === msg) errorMsg.innerText = ""; }, 4000);
+        }
+
+        function generateRoomCode() {
+            return Math.random().toString(36).substring(2, 8).toUpperCase();
+        }
+
+        document.getElementById('btn-create-room').addEventListener('click', () => {
+            initAudio();
+            myName = document.getElementById('player-name').value.trim();
+            if (!myName) { showError("Enter a duck name first!"); return; }
+            currentRoom = generateRoomCode();
+            isHost = true;
+            joinRoomLogic(currentRoom, true);
+        });
+
+        document.getElementById('btn-join-room').addEventListener('click', async () => {
+            initAudio();
+            myName = document.getElementById('player-name').value.trim();
+            if (!myName) { showError("Enter a duck name first!"); return; }
+            const code = document.getElementById('room-code-input').value.trim().toUpperCase();
+            
+            if (code.length === 6) {
+                try {
+                    const snapshot = await get(ref(db, `rooms/${code}`));
+                    if (snapshot.exists()) {
+                        const roomData = snapshot.val();
+                        if (roomData.state !== 'playing') {
+                            let nameExists = false;
+                            if (roomData.players) {
+                                nameExists = Object.values(roomData.players).some(p => p.name.toLowerCase() === myName.toLowerCase());
+                            }
+                            if (nameExists) {
+                                showError("That name is taken in this arena!");
+                                return;
+                            }
+                            currentRoom = code;
+                            isHost = false;
+                            joinRoomLogic(currentRoom, false);
+                        } else {
+                            showError("Match already in progress!");
+                        }
+                    } else {
+                        showError("Room not found!");
+                    }
+                } catch (error) {
+                    console.error("Join Error:", error);
+                    showError("Error connecting to room. Try again.");
+                }
+            } else {
+                showError("Room Code must be 6 letters.");
+            }
+        });
+
+        function joinRoomLogic(roomId, creating) {
+            roomRef = ref(db, `rooms/${roomId}`);
+            myPlayerRef = ref(db, `rooms/${roomId}/players/${myId}`);
+
+            if (creating) {
+                set(roomRef, {
+                    state: 'lobby',
+                    host: myId,
+                    currentEvent: 'normal',
+                    matchEndTime: 0
+                }).catch(e => showError("Setup Failed: " + e.message));
+                onDisconnect(roomRef).remove();
+            }
+
+            set(myPlayerRef, {
+                name: myName,
+                ready: isHost, 
+                color: myColor,
+                x: Math.random() * 1400 + 100,
+                y: Math.random() * 1000 + 100,
+                score: 0
+            }).catch(e => showError("Sync Failed: " + e.message));
+
+            onDisconnect(myPlayerRef).remove();
+
+            mainMenu.classList.add('hidden');
+            lobbyMenu.classList.remove('hidden');
+            displayRoomCode.innerText = roomId;
+            
+            if (isHost) {
+                btnStartMatch.classList.remove('hidden');
+            } else {
+                btnStartMatch.classList.add('hidden');
+            }
+
+            gameState = 'lobby';
+            setupRoomListeners();
+        }
+
+        document.getElementById('btn-copy-code').addEventListener('click', () => {
+            const el = document.createElement("input");
+            el.value = currentRoom;
+            document.body.appendChild(el);
+            el.select();
+            try {
+                document.execCommand("copy");
+                document.getElementById('btn-copy-code').innerText = "Copied!";
+                setTimeout(() => document.getElementById('btn-copy-code').innerText = "Copy Code", 1500);
+            } catch (err) {
+                showError("Copy failed.");
+            }
+            document.body.removeChild(el);
+        });
+
+        document.getElementById('btn-leave-room').addEventListener('click', leaveRoom);
+
+        function leaveRoom() {
+            if (myPlayerRef) remove(myPlayerRef);
+            offRoomListeners();
+            gameState = 'menu';
+            currentRoom = null;
+            isHost = false;
+            lobbyMenu.classList.add('hidden');
+            victoryScreen.classList.add('hidden');
+            hud.style.display = 'none';
+            canvas.style.display = 'none';
+            mobileControls.style.display = 'none';
+            controlsInfoHud.style.display = 'none';
+            uiLayer.style.display = 'flex';
+            mainMenu.classList.remove('hidden');
+            players = {};
+        }
+
+        document.getElementById('btn-ready').addEventListener('click', () => {
+            if (!isHost && myPlayerRef && players[myId]) {
+                update(myPlayerRef, { ready: !players[myId].ready })
+                    .catch(err => showError("Toggle status failed: " + err.message));
+            }
+        });
+
+        document.getElementById('btn-start-match').addEventListener('click', () => {
+            if (isHost && roomRef) {
+                const playerArray = Object.values(players);
+                const allReady = playerArray.every(p => p.ready);
+                if (allReady || playerArray.length === 1) {
+                    const matchTimeMS = 3 * 60 * 1000; // 3 Minute Match
+                    const endTime = Date.now() + matchTimeMS;
+                    update(roomRef, { 
+                        state: 'playing',
+                        matchEndTime: endTime,
+                        currentEvent: 'normal'
+                    }).catch(err => showError("Initialization Error: " + err.message));
+                    generateInitialBatteries(15);
+                } else {
+                    showError("All players must ready up first!");
+                }
+            }
+        });
+
+        document.getElementById('btn-back-to-lobby').addEventListener('click', () => {
+            if (isHost && roomRef) {
+                update(roomRef, { state: 'lobby' });
+            }
+            victoryScreen.classList.add('hidden');
+            lobbyMenu.classList.remove('hidden');
+            gameState = 'lobby';
+        });
+
+        function offRoomListeners() {
+            dbListeners.forEach(listener => {
+                off(listener.ref, 'value', listener.callback);
+            });
+            dbListeners = [];
+        }
+
+        function registerListener(reference, callback) {
+            onValue(reference, callback);
+            dbListeners.push({ ref: reference, callback });
+        }
+
+        function setupRoomListeners() {
+            offRoomListeners();
+
+            const stateRef = ref(db, `rooms/${currentRoom}/state`);
+            registerListener(stateRef, (snap) => {
+                const state = snap.val();
+                if (!state) { leaveRoom(); return; }
+
+                if (state === 'playing' && gameState !== 'playing') {
+                    startGame();
+                } else if (state === 'finished' && gameState !== 'gameover') {
+                    endGame();
+                } else if (state === 'lobby' && gameState !== 'lobby') {
+                    resetToLobby();
+                }
+            });
+
+            const playersRef = ref(db, `rooms/${currentRoom}/players`);
+            registerListener(playersRef, (snap) => {
+                players = snap.val() || {};
+                updateLobbyUI();
+                updateLeaderboard();
+            });
+
+            const hostRef = ref(db, `rooms/${currentRoom}/host`);
+            registerListener(hostRef, (snap) => {
+                roomHostId = snap.val();
+                updateLobbyUI();
+            });
+
+            const batteriesRef = ref(db, `rooms/${currentRoom}/batteries`);
+            registerListener(batteriesRef, (snap) => {
+                batteries = snap.val() || {};
+            });
+
+            const eventRef = ref(db, `rooms/${currentRoom}/currentEvent`);
+            registerListener(eventRef, (snap) => {
+                const newEvent = snap.val() || 'normal';
+                if (newEvent !== currentEvent && newEvent !== 'normal') {
+                    showEventBanner(newEvent);
+                }
+                currentEvent = newEvent;
+            });
+
+            const timeRef = ref(db, `rooms/${currentRoom}/matchEndTime`);
+            registerListener(timeRef, (snap) => {
+                matchEndTime = snap.val() || 0;
+            });
+        }
+
+        function updateLobbyUI() {
+            if (gameState !== 'lobby') return;
+            playersList.innerHTML = '';
+            for (let id in players) {
+                const p = players[id];
+                const li = document.createElement('li');
+                const isHostStr = (id === roomHostId) ? '<span class="host-text">(HOST)</span>' : '';
+                const readyStr = p.ready ? '<span class="ready-text">READY</span>' : '<span style="color:#666">NOT READY</span>';
+                li.innerHTML = `<span><span style="color:${p.color}; text-shadow: 0 0 5px ${p.color};">●</span> ${p.name} ${isHostStr}</span> ${readyStr}`;
+                playersList.appendChild(li);
+            }
+        }
+
+        function updateLeaderboard() {
+            if (gameState !== 'playing' && gameState !== 'gameover') return;
+            const list = document.getElementById('leaderboard-list');
+            list.innerHTML = '';
+            const sorted = Object.values(players).sort((a, b) => b.score - a.score);
+            sorted.forEach(p => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span style="color:${p.color}; text-shadow: 0 0 5px ${p.color};">${p.name}</span> <span>${p.score}</span>`;
+                list.appendChild(li);
+            });
+        }
+
+        function showEventBanner(evt) {
+            sfxEvent();
+            let text = "";
+            switch(evt) {
+                case 'giant_duck': text = "WARNING: GIANT DUCK DETECTED!"; break;
+                case 'low_gravity': text = "SYSTEM ANOMALY: LOW GRAVITY!"; break;
+                case 'oversized': text = "GLITCH ACTIVE: CHONKY DUCKS!"; break;
+                case 'flicker': text = "ALERT: GRID POWER SURGE!"; break;
+            }
+            eventBanner.innerText = text;
+            eventBanner.style.opacity = 1;
+            setTimeout(() => { eventBanner.style.opacity = 0; }, 3500);
+        }
+
+        // --- Adaptive Scaling & Camera System ---
+        const camera = { x: 0, y: 0 };
+        const arena = { width: 1600, height: 1200 };
+        let hasTouchCapability = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.innerWidth <= 1024);
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            // Layout identification & optimization based on current gameplay state
+            if (gameState === 'playing') {
+                if (hasTouchCapability) {
+                    mobileControls.style.display = 'block';
+                    controlsInfoHud.style.display = 'block';
+                    controlsIndicatorText.innerText = "Joystick & Button Controls Active";
+                } else {
+                    mobileControls.style.display = 'none';
+                    controlsInfoHud.style.display = 'block';
+                    controlsIndicatorText.innerText = "Keyboard Controls Active: WASD / Spacebar";
+                }
+            } else {
+                // Ensure mobile controllers are strictly hidden on menus to avoid touch blocking
+                mobileControls.style.display = 'none';
+                controlsInfoHud.style.display = 'none';
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Safe Fallback: Force touch layout upon ANY touch trigger across the window
+        window.addEventListener('touchstart', () => {
+            if (!hasTouchCapability) {
+                hasTouchCapability = true;
+                resizeCanvas();
+            }
+        }, { passive: true });
+
+        // --- Game Mechanics & State ---
+        let myDuck = { x: 800, y: 600, vx: 0, vy: 0, score: 0, lastDashTime: 0 };
+        const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, " ": false };
+        
+        // LAPTOP Keyboard Listeners
+        window.addEventListener('keydown', e => {
+            if (e.key === " ") {
+                e.preventDefault(); // Lock default spacebar page scrolling
+            }
+            keys[e.key] = true;
+        });
+        window.addEventListener('keyup', e => {
+            keys[e.key] = false;
+        });
+
+        // Defensive window blur handling (Prevents key-sticking on laptop)
+        window.addEventListener('blur', () => {
+            for (let key in keys) {
+                keys[key] = false;
+            }
+            joystickState.active = false;
+            joystickState.dx = 0;
+            joystickState.dy = 0;
+            joystickKnob.style.transform = `translate(0px, 0px)`;
+            mobileDashActive = false;
+            document.getElementById('mobile-dash-btn').classList.remove('pressed');
+        });
+
+        // --- TRUE MULTI-TOUCH HARDWARE CONTROLLER ENGINE ---
+        let joystickTouchId = null;
+        let dashTouchId = null;
+        let joystickState = { active: false, dx: 0, dy: 0, startX: 0, startY: 0 };
+        let mobileDashActive = false;
+
+        // Joystick Multi-touch handlers
+        joystickZone.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+                if (joystickTouchId === null) {
+                    joystickTouchId = touch.identifier;
+                    joystickState.active = true;
+                    
+                    const rect = joystickZone.getBoundingClientRect();
+                    joystickState.startX = rect.left + rect.width / 2;
+                    joystickState.startY = rect.top + rect.height / 2;
+                    
+                    updateJoystickPosition(touch.clientX, touch.clientY);
+                }
+            }
+        }, { passive: false });
+
+        // Global touchmove handling on window to guarantee fluid tracking even when fingers drift outside elements
+        window.addEventListener('touchmove', (e) => {
+            if (!joystickState.active) return;
+            
+            for (let i = 0; i < e.touches.length; i++) {
+                const touch = e.touches[i];
+                if (touch.identifier === joystickTouchId) {
+                    e.preventDefault();
+                    updateJoystickPosition(touch.clientX, touch.clientY);
+                }
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchend', (e) => {
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+                if (touch.identifier === joystickTouchId) {
+                    joystickTouchId = null;
+                    joystickState.active = false;
+                    joystickState.dx = 0;
+                    joystickState.dy = 0;
+                    joystickKnob.style.transform = `translate(0px, 0px)`;
+                }
+                
+                if (touch.identifier === dashTouchId) {
+                    dashTouchId = null;
+                    mobileDashActive = false;
+                    document.getElementById('mobile-dash-btn').classList.remove('pressed');
+                }
+            }
+        });
+
+        window.addEventListener('touchcancel', (e) => {
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+                if (touch.identifier === joystickTouchId) {
+                    joystickTouchId = null;
+                    joystickState.active = false;
+                    joystickState.dx = 0;
+                    joystickState.dy = 0;

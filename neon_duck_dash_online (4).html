@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Duck Dash Online</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
+        :root {
+            --neon-blue: #00f3ff;
+            --neon-pink: #ff00ff;
+            --neon-yellow: #fdf500;
+            --dark-bg: #050505;
+            --panel-bg: rgba(10, 10, 15, 0.9);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            background-color: var(--dark-bg);
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #gameCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            display: none;
+        }
+
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+            background: radial-gradient(circle, rgba(15,10,30,0.6) 0%, rgba(5,5,5,0.9) 100%);
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 2px solid var(--neon-blue);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 0 25px rgba(0, 243, 255, 0.4), inset 0 0 15px rgba(0, 243, 255, 0.2);
+            pointer-events: auto;
+            max-width: 90%;
+            width: 440px;
+            max-height: 95vh;
+            overflow-y: auto;
+        }
+
+        h1, h2, h3 {
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 900;
+        }
+
+        h1 {
+            color: var(--neon-pink);
+            text-shadow: 0 0 10px var(--neon-pink), 0 0 20px var(--neon-pink);
+            font-size: 2.2rem;
+            line-height: 1.2;
+        }
+
+        h2 {
+            color: var(--neon-blue);
+            text-shadow: 0 0 5px var(--neon-blue), 0 0 10px var(--neon-blue);
+        }
+
+        .story-box {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 0, 255, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            color: #ccc;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .story-highlight {
+            color: var(--neon-yellow);
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(253, 245, 0, 0.5);
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            background: rgba(0,0,0,0.7);
+            border: 1px solid var(--neon-blue);
+            color: var(--neon-blue);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            border-radius: 5px;
+            outline: none;
+            text-align: center;
+        }
+
+        input:focus {
+            box-shadow: 0 0 10px var(--neon-blue);
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            margin-bottom: 12px;
+            background: transparent;
+            border: 2px solid var(--neon-pink);
+            color: var(--neon-pink);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.2s ease;
+            box-shadow: 0 0 10px rgba(255, 0, 255, 0.2);
+        }
+
+        button:hover, button:active {
+            background: var(--neon-pink);
+            color: #000;
+            box-shadow: 0 0 20px var(--neon-pink), 0 0 40px var(--neon-pink);
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            border-color: #555;
+            color: #555;
+            box-shadow: none;
+        }
+
+        .btn-blue {
+            border-color: var(--neon-blue);
+            color: var(--neon-blue);
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
+        }
+
+        .btn-blue:hover, .btn-blue:active {
+            background: var(--neon-blue);
+            color: #000;
+            box-shadow: 0 0 20px var(--neon-blue), 0 0 40px var(--neon-blue);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        #players-list {
+            list-style: none;
+            margin-bottom: 20px;
+            text-align: left;
+            max-height: 180px;
+            overflow-y: auto;
+            border: 1px solid rgba(0, 243, 255, 0.2);
+            border-radius: 5px;
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        #players-list li {
+            padding: 10px;
+            border-bottom: 1px solid rgba(0, 243, 255, 0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+
+        .ready-text { color: var(--neon-yellow); font-weight: bold; }
+        .host-text { color: var(--neon-pink); font-size: 0.75rem; font-weight: bold; }
+
+        /* Game HUD */
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+            display: none;
+            padding: 15px;
+        }
+
+        .hud-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            width: 100%;
+        }
+
+        #timer {
+            font-size: 2.2rem;
+            color: var(--neon-yellow);
+            text-shadow: 0 0 10px var(--neon-yellow);
+            font-weight: 900;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 15px;
+            border-radius: 8px;
+            border: 1px solid var(--neon-yellow);
+        }
+
+        #leaderboard {
+            background: rgba(0,0,0,0.7);
+            border: 1px solid var(--neon-blue);
+            border-radius: 10px;
+            padding: 12px;
+            min-width: 180px;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+        }
+
+        #leaderboard h3 {
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            color: var(--neon-blue);
+            border-bottom: 1px solid rgba(0, 243, 255, 0.3);
+            padding-bottom: 4px;
+        }
+
+        #leaderboard-list {
+            list-style: none;
+            font-size: 0.85rem;
+        }
+
+        #leaderboard-list li {
+            margin-bottom: 4px;
+        }
+
+        #event-banner {
+            position: absolute;
+            top: 22%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.8rem;
+            color: var(--neon-pink);
+            text-shadow: 0 0 15px var(--neon-pink), 0 0 30px var(--neon-pink);
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.4s;
+            background: rgba(0,0,0,0.8);
+            padding: 10px 25px;
+            border-radius: 30px;
+            border: 2px solid var(--neon-pink);
+            font-weight: 900;
+        }
+
+        /* Controls Help Guide Overlay */
+        #controls-guide {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(0, 243, 255, 0.4);
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 0.75rem;
+            color: #aaa;
+            pointer-events: none;
+        }
+
+        /* Mobile Controller Layout */
+        #mobile-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 180px;
+            pointer-events: none;
+            z-index: 6;
+            display: none;
+        }
+
+        /* Virtual Joystick Zone */
+        #joystick-zone {
+            position: absolute;
+            bottom: 25px;
+            left: 25px;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: rgba(0, 243, 255, 0.1);
+            border: 2px solid rgba(0, 243, 255, 0.3);
+            pointer-events: auto;
+        }
+
+        #joystick-knob {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--neon-blue);
+            box-shadow: 0 0 15px var(--neon-blue);
+            pointer-events: none;
+        }
+
+        /* Mobile Action Buttons (Dash) */
+        #mobile-dash-btn {
+            position: absolute;
+            bottom: 35px;
+            right: 35px;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(255, 0, 255, 0.15);
+            border: 3px solid var(--neon-pink);
+            color: var(--neon-pink);
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 1rem;
+            pointer-events: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 15px rgba(255, 0, 255, 0.3);
+        }
+
+        #mobile-dash-btn:active {
+            background: var(--neon-pink);
+            color: #000;
+            box-shadow: 0 0 25px var(--neon-pink);
+        }
+
+        #connection-status {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.75rem;
+            color: var(--neon-blue);
+            background: rgba(0, 0, 0, 0.5);
+            padding: 3px 10px;
+            border-radius: 10px;
+            z-index: 15;
+        }
+
+        .pulse {
+            animation: pulse-anim 2s infinite;
+        }
+
+        @keyframes pulse-anim {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        #error-msg {
+            color: #ff3333;
+            margin-top: 10px;
+            font-size: 0.85rem;
+            min-height: 1.2em;
+            text-shadow: 0 0 5px rgba(255, 51, 51, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- UI Layer -->
+    <div class="ui-layer" id="ui-layer">
+        
+        <!-- Main Menu -->
+        <div class="panel" id="main-menu">
+            <h1>NEON DUCK DASH</h1>
+            <p style="margin-bottom: 15px; color: var(--neon-yellow); font-size: 0.95rem; font-weight: bold; letter-spacing: 1px;">MULTIPLAYER CYBER-POND</p>
+            
+            <!-- Story & Need Description -->
+            <div class="story-box">
+                <span class="story-highlight">THE STORY:</span> Year 2099. The Cyber-Grid is draining! Our digital neon city is running out of power.<br><br>
+                <span class="story-highlight">THE NEED:</span> Deploy your custom cyber-duck to the virtual pond, gather glowing <span class="story-highlight">Plasma Batteries</span> to recharge the grid, and outrun chaotic digital glitches!<br><br>
+                <span class="story-highlight">THE GOAL:</span> Outscore other ducks, survive wild events, and save the cyber-grid before the 3-minute timer expires!
+            </div>
+
+            <input type="text" id="player-name" placeholder="Enter Your Duck Name" maxlength="12">
+            <button id="btn-create-room">Connecting...</button>
+            <div style="margin: 10px 0; font-size: 0.8rem; color: #666; letter-spacing: 2px;">-- OR JOIN AN EXISTENT CODE --</div>
+            <input type="text" id="room-code-input" placeholder="6-Letter Room Code" maxlength="6" style="text-transform: uppercase;">
+            <button class="btn-blue" id="btn-join-room">Connecting...</button>
+            <div id="error-msg"></div>
+        </div>
+
+        <!-- Lobby Menu -->
+        <div class="panel hidden" id="lobby-menu">
+            <h2>Waiting Room</h2>
+            <p style="margin-bottom: 5px;">Room Code:</p>
+            <strong id="display-room-code" style="color: var(--neon-yellow); font-size: 1.8rem; letter-spacing: 5px; text-shadow: 0 0 10px rgba(253, 245, 0, 0.4);"></strong>
+            <div>
+                <button class="btn-blue" id="btn-copy-code" style="padding: 10px; font-size: 0.85rem; margin-top: 10px; width: auto; display: inline-block;">Copy Code</button>
+            </div>
+            
+            <h3 style="margin-top: 25px; font-size: 1.1rem; color: var(--neon-blue);">Pond Connections</h3>
+            <ul id="players-list">
+                <!-- Players populate here dynamically -->
+            </ul>
+
+            <button id="btn-start-match" class="hidden pulse">Launch Match</button>
+            <button class="btn-blue" id="btn-ready">Ready Up</button>
+            <button class="btn-blue" id="btn-leave-room" style="margin-top: 10px; font-size: 0.85rem; border-color: #555; color: #aaa;">Leave Server</button>
+        </div>
+
+        <!-- Victory Screen -->
+        <div class="panel hidden" id="victory-screen">
+            <h1>Match Completed!</h1>
+            <p style="color: var(--neon-yellow); margin-bottom: 5px;">THE TOP CYBER-DUCK IS:</p>
+            <h2 id="winner-name" style="color: var(--neon-blue); font-size: 2.2rem; margin-bottom: 20px;"></h2>
+            
+            <h3 style="font-size: 1rem; color: var(--neon-pink); border-bottom: 1px solid rgba(255,0,255,0.2); padding-bottom: 5px;">Final Scoreboard</h3>
+            <ul id="final-scores" style="list-style: none; margin-bottom: 25px; text-align: left; padding: 10px; background: rgba(0,0,0,0.4); border-radius: 5px;"></ul>
+            <button id="btn-back-to-lobby">Back to Lobby</button>
+        </div>
+
+    </div>
+
+    <!-- Game HUD -->
+    <div id="hud">
+        <div class="hud-top">
+            <div id="leaderboard">
+                <h3>Cyber Scores</h3>
+                <ul id="leaderboard-list"></ul>
+            </div>
+            <div id="timer">3:00</div>
+        </div>
+        <div id="event-banner">Event Name!</div>
+    </div>
+
+    <!-- Mobile Virtual Controls -->
+    <div id="mobile-controls">
+        <div id="joystick-zone">
+            <div id="joystick-knob"></div>
+        </div>
+        <div id="mobile-dash-btn">DASH</div>
+    </div>
+
+    <!-- Desktop Control Guide Overlay -->
+    <div id="controls-guide" class="hidden">
+        <div><strong>Keyboard Controls:</strong></div>
+        <div>Move: W, A, S, D / Arrow Keys</div>
+        <div>Dash Boost: Spacebar</div>
+    </div>
+
+    <div id="connection-status">Connecting to Grid...</div>
+
+    <!-- Game Canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Firebase Imports & Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue, update, remove, onDisconnect, get, child, off } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB_cZ3djaTfYbwanJ_XA62HeDs8MkTm0iA",
+            authDomain: "multi-online-game.firebaseapp.com",
+            databaseURL: "https://multi-online-game-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "multi-online-game",
+            storageBucket: "multi-online-game.firebasestorage.app",
+            messagingSenderId: "654755025514",
+            appId: "1:654755025514:web:b09bc4fbe88e48e3e4b013",
+            measurementId: "G-V8HE26C2KK"
+        };
+
+        // Initialize Firebase services
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        // Control DOM references
+        const btnCreate = document.getElementById('btn-create-room');
+        const btnJoin = document.getElementById('btn-join-room');
+        const mobileControls = document.getElementById('mobile-controls');
+        const controlsGuide = document.getElementById('controls-guide');
+
+        // State & Network Variables
+        let myId = "duck_" + Math.random().toString(36).substr(2, 9);
+        let myName = "";
+        let currentRoom = null;
+        let roomHostId = null;
+        let isHost = false;
+        let gameState = 'menu'; // menu, lobby, playing, gameover
+        let roomRef = null;
+        let myPlayerRef = null;
+        let players = {};
+        let batteries = {};
+        let currentEvent = 'normal';
+        let matchEndTime = 0;
+        let dbListeners = []; // Keep track of database references to cleanly unsubscribe
+
+        const neonColors = ['#00f3ff', '#ff00ff', '#fdf500', '#00ff00', '#ff5500'];
+        let myColor = neonColors[Math.floor(Math.random() * neonColors.length)];
+
+        // --- Authentication Status & Guardrails ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                btnCreate.disabled = false;
+                btnJoin.disabled = false;
+                btnCreate.innerText = "Create Room";
+                btnJoin.innerText = "Join Room";
+                document.getElementById('connection-status').innerText = "Connected to Cyber-Grid";
+            } else {
+                btnCreate.disabled = true;
+                btnJoin.disabled = true;
+                btnCreate.innerText = "Connecting...";
+                btnJoin.innerText = "Connecting...";
+                document.getElementById('connection-status').innerText = "Offline";
+            }
+        });
+
+        // Trigger sign-in sequence immediately
+        signInAnonymously(auth).catch((error) => {
+            console.error("Auth Exception:", error);
+            document.getElementById('error-msg').innerText = "Database connection error. Please refresh.";
+        });
+
+        // --- Audio System (Web Audio API) ---
+        let audioCtx;
+        let isAudioInit = false;
+
+        function initAudio() {
+            if (isAudioInit) return;
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                isAudioInit = true;
+                startBGM();
+            } catch (e) {
+                console.warn("Web Audio Context could not be initialized", e);
+            }
+        }
+
+        function playTone(freq, type, duration, vol = 0.1) {
+            if (!audioCtx || audioCtx.state === 'suspended') return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function sfxCollect() { 
+            playTone(660, 'sine', 0.1, 0.15); 
+            setTimeout(() => playTone(990, 'sine', 0.15, 0.15), 70); 
+        }
+        function sfxDash() { 
+            playTone(200, 'sawtooth', 0.15, 0.1); 
+            setTimeout(() => playTone(500, 'sine', 0.1, 0.1), 50);
+        }
+        function sfxJump() { playTone(350, 'triangle', 0.2, 0.15); }
+        function sfxEvent() { 
+            playTone(180, 'sawtooth', 0.6, 0.25); 
+            setTimeout(() => playTone(120, 'sawtooth', 0.8, 0.25), 150); 
+        }
+        
+        let bgmInterval;
+        function startBGM() {
+            if (bgmInterval) clearInterval(bgmInterval);
+            let noteIdx = 0;
+            const notes = [147, 147, 220, 147, 294, 220, 147, 110];
+            bgmInterval = setInterval(() => {
+                if (gameState === 'playing' && audioCtx) {
+                    playTone(notes[noteIdx % notes.length], 'square', 0.18, 0.03);
+                    noteIdx++;
+                }
+            }, 200);
+        }
+
+        // --- DOM Layer Handlers ---
+        const uiLayer = document.getElementById('ui-layer');
+        const mainMenu = document.getElementById('main-menu');
+        const lobbyMenu = document.getElementById('lobby-menu');
+        const victoryScreen = document.getElementById('victory-screen');
+        const hud = document.getElementById('hud');
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const errorMsg = document.getElementById('error-msg');
+        const displayRoomCode = document.getElementById('display-room-code');
+        const playersList = document.getElementById('players-list');
+        const btnStartMatch = document.getElementById('btn-start-match');
+        const joystickZone = document.getElementById('joystick-zone');
+        const joystickKnob = document.getElementById('joystick-knob');
+        const eventBanner = document.getElementById('event-banner');
+
+        function showError(msg) {
+            errorMsg.innerText = msg;
+            setTimeout(() => { if(errorMsg.innerText === msg) errorMsg.innerText = ""; }, 4000);
+        }
+
+        function generateRoomCode() {
+            return Math.random().toString(36).substring(2, 8).toUpperCase();
+        }
+
+        document.getElementById('btn-create-room').addEventListener('click', () => {
+            initAudio();
+            myName = document.getElementById('player-name').value.trim();
+            if (!myName) { showError("Please enter a duck nickname!"); return; }
+            currentRoom = generateRoomCode();
+            isHost = true;
+            joinRoomLogic(currentRoom, true);
+        });
+
+        document.getElementById('btn-join-room').addEventListener('click', async () => {
+            initAudio();
+            myName = document.getElementById('player-name').value.trim();
+            if (!myName) { showError("Please enter a duck nickname!"); return; }
+            const code = document.getElementById('room-code-input').value.trim().toUpperCase();
+            
+            if (code.length === 6) {
+                try {
+                    const snapshot = await get(ref(db, `rooms/${code}`));
+                    if (snapshot.exists()) {
+                        const roomData = snapshot.val();
+                        if (roomData.state !== 'playing') {
+                            // Check for player name conflict in room
+                            let nameExists = false;
+                            if (roomData.players) {
+                                nameExists = Object.values(roomData.players).some(p => p.name.toLowerCase() === myName.toLowerCase());
+                            }
+                            if (nameExists) {
+                                showError("That name is taken in this room!");
+                                return;
+                            }
+                            currentRoom = code;
+                            isHost = false;
+                            joinRoomLogic(currentRoom, false);
+                        } else {
+                            showError("Room is currently playing a match!");
+                        }
+                    } else {
+                        showError("Room Code does not exist!");
+                    }
+                } catch (error) {
+                    console.error("Room Read Error:", error);
+                    showError("Error checking room data. Please try again.");
+                }
+            } else {
+                showError("Enter a valid 6-letter Room Code!");
+            }
+        });
+
+        function joinRoomLogic(roomId, creating) {
+            roomRef = ref(db, `rooms/${roomId}`);
+            myPlayerRef = ref(db, `rooms/${roomId}/players/${myId}`);
+
+            if (creating) {
+                set(roomRef, {
+                    state: 'lobby',
+                    host: myId,
+                    currentEvent: 'normal',
+                    matchEndTime: 0
+                }).catch(e => showError("Lobby Setup Error: " + e.message));
+                
+                onDisconnect(roomRef).remove();
+            }
+
+            // Set my player data (coordinates in 1600x1200 virtual grid)
+            set(myPlayerRef, {
+                name: myName,
+                ready: isHost, 
+                color: myColor,
+                x: Math.random() * 1400 + 100,
+                y: Math.random() * 1000 + 100,
+                score: 0
+            }).catch(e => showError("Server Synch Error: " + e.message));
+
+            onDisconnect(myPlayerRef).remove();
+
+            // Setup UI Visibility transitions
+            mainMenu.classList.add('hidden');
+            lobbyMenu.classList.remove('hidden');
+            displayRoomCode.innerText = roomId;
+            
+            if (isHost) {
+                btnStartMatch.classList.remove('hidden');
+            } else {
+                btnStartMatch.classList.add('hidden');
+            }
+
+            gameState = 'lobby';
+            setupRoomListeners();
+        }
+
+        document.getElementById('btn-copy-code').addEventListener('click', () => {
+            const tempInput = document.createElement("input");
+            tempInput.value = currentRoom;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            try {
+                document.execCommand("copy");
+                document.getElementById('btn-copy-code').innerText = "Copied Room!";
+                setTimeout(() => document.getElementById('btn-copy-code').innerText = "Copy Code", 2000);
+            } catch (err) {
+                showError("Copy action failed. Enter code manually.");
+            }
+            document.body.removeChild(tempInput);
+        });
+
+        document.getElementById('btn-leave-room').addEventListener('click', leaveRoom);
+
+        function leaveRoom() {
+            if (myPlayerRef) remove(myPlayerRef);
+            offRoomListeners();
+            gameState = 'menu';
+            currentRoom = null;
+            isHost = false;
+            lobbyMenu.classList.add('hidden');
+            victoryScreen.classList.add('hidden');
+            hud.style.display = 'none';
+            canvas.style.display = 'none';
+            mobileControls.style.display = 'none';
+            controlsGuide.classList.add('hidden');
+            uiLayer.style.display = 'flex';
+            mainMenu.classList.remove('hidden');
+            players = {};
+        }
+
+        document.getElementById('btn-ready').addEventListener('click', () => {
+            if (!isHost && myPlayerRef && players[myId]) {
+                update(myPlayerRef, { ready: !players[myId].ready })
+                    .catch(err => showError("Toggle status failed: " + err.message));
+            }
+        });
+
+        document.getElementById('btn-start-match').addEventListener('click', () => {
+            if (isHost && roomRef) {
+                const playerArray = Object.values(players);
+                const allReady = playerArray.every(p => p.ready);
+                if (allReady || playerArray.length === 1) {
+                    const durationInMilliseconds = 3 * 60 * 1000; // 3 minutes standard match duration
+                    const endTime = Date.now() + durationInMilliseconds;
+                    update(roomRef, { 
+                        state: 'playing',
+                        matchEndTime: endTime,
+                        currentEvent: 'normal'
+                    }).catch(err => showError("Match initialization failed: " + err.message));
+                    generateInitialBatteries(15);
+                } else {
+                    showError("All connected players must toggle 'Ready' first!");
+                }
+            }
+        });
+
+        document.getElementById('btn-back-to-lobby').addEventListener('click', () => {
+            if (isHost && roomRef) {
+                update(roomRef, { state: 'lobby' });
+            }
+            victoryScreen.classList.add('hidden');
+            lobbyMenu.classList.remove('hidden');
+            gameState = 'lobby';
+        });
+
+        function offRoomListeners() {
+            dbListeners.forEach(listener => {
+                off(listener.ref, 'value', listener.callback);
+            });
+            dbListeners = [];
+        }
+
+        function registerListener(reference, callback) {
+            onValue(reference, callback);
+            dbListeners.push({ ref: reference, callback });
+        }
+
+        function setupRoomListeners() {
+            offRoomListeners();
+
+            const stateRef = ref(db, `rooms/${currentRoom}/state`);
+            registerListener(stateRef, (snap) => {
+                const state = snap.val();
+                if (!state) { leaveRoom(); return; }
+
+                if (state === 'playing' && gameState !== 'playing') {
+                    startGame();
+                } else if (state === 'finished' && gameState !== 'gameover') {
+                    endGame();
+                } else if (state === 'lobby' && gameState !== 'lobby') {
+                    resetToLobby();
+                }
+            });
+
+            const playersRef = ref(db, `rooms/${currentRoom}/players`);
+            registerListener(playersRef, (snap) => {
+                players = snap.val() || {};
+                updateLobbyUI();
+                updateLeaderboard();
+            });
+
+            const hostRef = ref(db, `rooms/${currentRoom}/host`);
+            registerListener(hostRef, (snap) => {
+                roomHostId = snap.val();
+                updateLobbyUI();
+            });
+
+            const batteriesRef = ref(db, `rooms/${currentRoom}/batteries`);
+            registerListener(batteriesRef, (snap) => {
+                batteries = snap.val() || {};
+            });
+
+            const eventRef = ref(db, `rooms/${currentRoom}/currentEvent`);
+            registerListener(eventRef, (snap) => {
+                const newEvent = snap.val() || 'normal';
+                if (newEvent !== currentEvent && newEvent !== 'normal') {
+                    showEventBanner(newEvent);
+                }
+                currentEvent = newEvent;
+            });
+
+            const timeRef = ref(db, `rooms/${currentRoom}/matchEndTime`);
+            registerListener(timeRef, (snap) => {
+                matchEndTime = snap.val() || 0;
+            });
+        }
+
+        function updateLobbyUI() {
+            if (gameState !== 'lobby') return;
+            playersList.innerHTML = '';
+            for (let id in players) {
+                const p = players[id];
+                const li = document.createElement('li');
+                const isHostStr = (id === roomHostId) ? '<span class="host-text">(HOST)</span>' : '';
+                const readyStr = p.ready ? '<span class="ready-text">READY</span>' : '<span style="color:#666">NOT READY</span>';
+                li.innerHTML = `<span><span style="color:${p.color}; text-shadow: 0 0 5px ${p.color};">●</span> ${p.name} ${isHostStr}</span> ${readyStr}`;
+                playersList.appendChild(li);
+            }
+        }
+
+        function updateLeaderboard() {
+            if (gameState !== 'playing' && gameState !== 'gameover') return;
+            const list = document.getElementById('leaderboard-list');
+            list.innerHTML = '';
+            const sorted = Object.values(players).sort((a, b) => b.score - a.score);
+            sorted.forEach(p => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span style="color:${p.color}; text-shadow: 0 0 5px ${p.color};">${p.name}</span>: ${p.score}`;
+                list.appendChild(li);
+            });
+        }
+
+        function showEventBanner(evt) {
+            sfxEvent();
+            let text = "";
+            switch(evt) {
+                case 'giant_duck': text = "ALERT: GIANT DUCK GLITCH INCOMING!"; break;
+                case 'low_gravity': text = "SYSTEM ANOMALY: LOW GRAVITY MODIFIER!"; break;
+                case 'oversized': text = "GLITCH DETECTED: CHONKY DUCK MODE!"; break;
+                case 'flicker': text = "WARNING: GRID POWER MALFUNCTION!"; break;
+            }
+            eventBanner.innerText = text;
+            eventBanner.style.opacity = 1;
+            setTimeout(() => { eventBanner.style.opacity = 0; }, 3500);
+        }
+
+        // --- Camera & Viewport System ---
+        const camera = { x: 0, y: 0 };
+        const arena = { width: 1600, height: 1200 };
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            // Detect if player is on desktop/mobile to display the appropriate guides
+            if ('ontouchstart' in window) {
+                mobileControls.style.display = 'block';
+                controlsGuide.classList.add('hidden');
+            } else {
+                mobileControls.style.display = 'none';
+                if (gameState === 'playing') {
+                    controlsGuide.classList.remove('hidden');
+                }
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // --- Game Entity State Variables ---
+        let myDuck = { x: 800, y: 600, vx: 0, vy: 0, score: 0, lastDashTime: 0 };
+        const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, " ": false };
+        
+        window.addEventListener('keydown', e => {
+            if (e.key === " ") {
+                e.preventDefault(); // Prevents page scrolling
+            }
+            keys[e.key] = true;
+        });
+        window.addEventListener('keyup', e => {
+            keys[e.key] = false;
+        });
+
+        // Mobile Controls Support
+        let joystick = { active: false, dx: 0, dy: 0, originX: 0, originY: 0 };
+        let mobileDashActive = false;
+
+        joystickZone.addEventListener('touchstart', handleTouchStart, {passive: false});
+        joystickZone.addEventListener('touchmove', handleTouchMove, {passive: false});
+        joystickZone.addEventListener('touchend', handleTouchEnd);
+
+        document.getElementById('mobile-dash-btn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            mobileDashActive = true;
+        });
+        document.getElementById('mobile-dash-btn').addEventListener('touchend', (e) => {
+            e.preventDefault();
+            mobileDashActive = false;
+        });
+
+        function handleTouchStart(e) {
+            e.preventDefault();
+            joystick.active = true;
+            const rect = joystickZone.getBoundingClientRect();
+            joystick.originX = rect.left + rect.width / 2;
+            joystick.originY = rect.top + rect.height / 2;
+            updateJoystick(e.touches[0].clientX, e.touches[0].clientY);
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            if (!joystick.active) return;
+            updateJoystick(e.touches[0].clientX, e.touches[0].clientY);
+        }
+
+        function handleTouchEnd(e) {
+            e.preventDefault();
+            joystick.active = false;
+            joystick.dx = 0;
+            joystick.dy = 0;
+            joystickKnob.style.transform = `translate(0px, 0px)`;
+        }
+
+        function updateJoystick(clientX, clientY) {
+            let dx = clientX - joystick.originX;
+            let dy = clientY - joystick.originY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const maxDist = 45;
+            
+            if (distance > maxDist) {
+                dx = (dx / distance) * maxDist;
+                dy = (dy / distance) * maxDist;
+            }
+            
+            joystickKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+            
+            // Normalize inputs between -1 and 1
+            joystick.dx = dx / maxDist;
+            joystick.dy = dy / maxDist;
+        }
+
+        function startGame() {
+            gameState = 'playing';
+            uiLayer.style.display = 'none';
+            canvas.style.display = 'block';
+            hud.style.display = 'block';
+            resizeCanvas();
+
+            // Set dynamic start coordinates within virtual arena
+            myDuck.x = Math.random() * (arena.width - 200) + 100;
+            myDuck.y = Math.random() * (arena.height - 200) + 100;
+            myDuck.vx = 0;
+            myDuck.vy = 0;
+            myDuck.score = 0;
+            myDuck.lastDashTime = 0;
+            
+            if (myPlayerRef) {
+                update(myPlayerRef, { x: myDuck.x, y: myDuck.y, score: 0 });
+            }
+            
+            requestAnimationFrame(gameLoop);
+            if (isHost) hostLoop();
+        }
+
+        function resetToLobby() {
+            gameState = 'lobby';
+            canvas.style.display = 'none';
+            hud.style.display = 'none';
+            mobileControls.style.display = 'none';
+            controlsGuide.classList.add('hidden');
+            victoryScreen.classList.add('hidden');
+            lobbyMenu.classList.remove('hidden');
+            uiLayer.style.display = 'flex';
+        }
+
+        function endGame() {
+            gameState = 'gameover';
+            canvas.style.display = 'none';
+            hud.style.display = 'none';
+            mobileControls.style.display = 'none';
+            controlsGuide.classList.add('hidden');
+            uiLayer.style.display = 'flex';
+            victoryScreen.classList.remove('hidden');
+            
+            const sorted = Object.values(players).sort((a, b) => b.score - a.score);
+            if (sorted.length > 0) {
+                document.getElementById('winner-name').innerText = sorted[0].name;
+                document.getElementById('winner-name').style.color = sorted[0].color;
+                document.getElementById('winner-name').style.textShadow = `0 0 15px ${sorted[0].color}`;
+            }
+            
+            const finalScores = document.getElementById('final-scores');
+            finalScores.innerHTML = '';
+            sorted.forEach(p => {
+                const li = document.createElement('li');
+                li.style.color = p.color;
+                li.style.padding = '8px 0';
+                li.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+                li.innerHTML = `<strong>${p.name}</strong>: ${p.score} Batteries Saved`;
+                finalScores.appendChild(li);
+            });
+        }
+
+        // Host Loop (Runs at 60 FPS to handle game timer and environmental syncs)
+        let hostEventTimer = 0;
+        function hostLoop() {
+            if (gameState !== 'playing' || !isHost) return;
+
+            // Timer check
+            if (Date.now() >= matchEndTime) {
+                update(roomRef, { state: 'finished' });
+                return;
+            }
+
+            // Ensure batteries count is consistently active
+            if (Object.keys(batteries).length < 12) {
+                generateInitialBatteries(4);
+            }
+
+            // Manage Random Giga Glitches & Event Timers
+            hostEventTimer++;
+            if (hostEventTimer > 500) { 
+                hostEventTimer = 0;
+                if (Math.random() > 0.5) {
+                    const events = ['giant_duck', 'low_gravity', 'oversized', 'flicker'];
+                    const evt = events[Math.floor(Math.random() * events.length)];
+                    update(roomRef, { currentEvent: evt });
+                    
+                    // Reset to normal state after 7 seconds
+                    setTimeout(() => {
+                        if (gameState === 'playing') {
+                            update(roomRef, { currentEvent: 'normal' });
+                        }
+                    }, 7000);
+                }
+            }
+
+            setTimeout(hostLoop, 1000/60);
+        }
+
+        function generateInitialBatteries(count = 15) {
+            for(let i=0; i<count; i++) {
+                const bId = "bat_" + Math.random().toString(36).substr(2, 9);
+                set(ref(db, `rooms/${currentRoom}/batteries/${bId}`), {
+                    x: Math.random() * (arena.width - 100) + 50,
+                    y: Math.random() * (arena.height - 100) + 50
+                });
+            }
+        }
+
+        // Main Synchronous Client Loop
+        let lastSync = 0;
+        let giantDuckNPC = { x: 800, y: 600, vx: 4, vy: 4 };
+
+        function gameLoop() {
+            if (gameState !== 'playing') return;
+
+            updatePhysics();
+            checkCollisions();
+            updateCamera();
+            render();
+
+            // Client Networking Synchronization (Sync Coordinates every 45ms)
+            const now = Date.now();
+            if (now - lastSync > 45) {
+                if (myPlayerRef) {
+                    update(myPlayerRef, { x: myDuck.x, y: myDuck.y });
+                }
+                lastSync = now;
+            }
+
+            // Standard Clock countdown calculations
+            const timeLeft = Math.max(0, Math.floor((matchEndTime - Date.now()) / 1000));
+            const mins = Math.floor(timeLeft / 60);
+            const secs = (timeLeft % 60).toString().padStart(2, '0');
+            document.getElementById('timer').innerText = `${mins}:${secs}`;
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function updatePhysics() {
+            let friction = currentEvent === 'low_gravity' ? 0.98 : 0.86;
+            let accel = currentEvent === 'low_gravity' ? 0.4 : 1.3;
+            let maxSpeed = currentEvent === 'low_gravity' ? 14 : 9;
+
+            // Keyboard Motion Checks
+            if (keys.w || keys.ArrowUp) myDuck.vy -= accel;
+            if (keys.s || keys.ArrowDown) myDuck.vy += accel;
+            if (keys.a || keys.ArrowLeft) myDuck.vx -= accel;
+            if (keys.d || keys.ArrowRight) myDuck.vx += accel;
+
+            // Virtual Stick Checks
+            if (joystick.active) {
+                myDuck.vx += joystick.dx * accel * 1.5;
+                myDuck.vy += joystick.dy * accel * 1.5;
+            }
+
+            // Neon Speed Dash Mechanics (Space / Mobile Button)
+            if (keys[" "] || mobileDashActive) {
+                const now = Date.now();
+                if (now - myDuck.lastDashTime > 1500) { // 1.5s Cooldown duration
+                    myDuck.lastDashTime = now;
+                    sfxDash();
+                    
+                    // Determine direction of motion to apply the Dash impulse
+                    let moveAngle = Math.atan2(myDuck.vy, myDuck.vx);
+                    if (myDuck.vx === 0 && myDuck.vy === 0) {
+                        moveAngle = 0; // Dash forward if stationary
+                    }
+                    myDuck.vx += Math.cos(moveAngle) * 15;
+                    myDuck.vy += Math.sin(moveAngle) * 15;
+                }
+            }
+
+            // Cap speeds safely
+            let currSpeed = Math.sqrt(myDuck.vx*myDuck.vx + myDuck.vy*myDuck.vy);
+            if (currSpeed > maxSpeed && (Date.now() - myDuck.lastDashTime > 300)) {
+                myDuck.vx = (myDuck.vx / currSpeed) * maxSpeed;
+                myDuck.vy = (myDuck.vy / currSpeed) * maxSpeed;
+            }
+
+            // Process calculated displacements
+            myDuck.x += myDuck.vx;
+            myDuck.y += myDuck.vy;
+
+            // Drag force application
+            myDuck.vx *= friction;
+            myDuck.vy *= friction;
+
+            // Boundary collision check (Using unified 1600x1200 dimensions)
+            if (myDuck.x < 35) { myDuck.x = 35; myDuck.vx *= -0.5; }
+            if (myDuck.x > arena.width - 35) { myDuck.x = arena.width - 35; myDuck.vx *= -0.5; }
+            if (myDuck.y < 35) { myDuck.y = 35; myDuck.vy *= -0.5; }
+            if (myDuck.y > arena.height - 35) { myDuck.y = arena.height - 35; myDuck.vy *= -0.5; }
+
+            // Deterministic Giant Glitch Duck Movement
+            if (currentEvent === 'giant_duck') {
+                giantDuckNPC.x += giantDuckNPC.vx;
+                giantDuckNPC.y += giantDuckNPC.vy;
+                
+                if (giantDuckNPC.x < 150 || giantDuckNPC.x > arena.width - 150) giantDuckNPC.vx *= -1;
+                if (giantDuckNPC.y < 150 || giantDuckNPC.y > arena.height - 150) giantDuckNPC.vy *= -1;
+                
+                // Physics repulsion algorithm
+                const dx = myDuck.x - giantDuckNPC.x;
+                const dy = myDuck.y - giantDuckNPC.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < 130) {
+                    myDuck.vx += (dx/dist) * 18;
+                    myDuck.vy += (dy/dist) * 18;
+                    sfxJump();
+                }
+            } else {
+                // Keep center-aligned when inactive
+                giantDuckNPC.x = arena.width / 2;
+                giantDuckNPC.y = arena.height / 2;
+            }
+        }
+
+        function checkCollisions() {
+            const hitRadius = currentEvent === 'oversized' ? 50 : 25;
+            for (let bId in batteries) {
+                const b = batteries[bId];
+                const dx = myDuck.x - b.x;
+                const dy = myDuck.y - b.y;
+                if (Math.sqrt(dx*dx + dy*dy) < hitRadius + 12) {
+                    // Claim score update locally + push to real-time database
+                    sfxCollect();
+                    myDuck.score += 10; // 10 points per plasma battery
+                    update(myPlayerRef, { score: myDuck.score });
+                    remove(ref(db, `rooms/${currentRoom}/batteries/${bId}`)); 
+                }
+            }
+        }
+
+        function updateCamera() {
+            // Smoothly lerp camera coordinates centered around current user duck
+            const targetCamX = myDuck.x - canvas.width / 2;
+            const targetCamY = myDuck.y - canvas.height / 2;
+            
+            camera.x += (targetCamX - camera.x) * 0.1;
+            camera.y += (targetCamY - camera.y) * 0.1;
+
+            // Restrict camera to arena boundaries to avoid showing background space
+            camera.x = Math.max(0, Math.min(camera.x, arena.width - canvas.width));
+            camera.y = Math.max(0, Math.min(camera.y, arena.height - canvas.height));
+        }
+
+        function render() {
+            // Clear Frame with Flicker mechanics support
+            if (currentEvent === 'flicker' && Math.random() > 0.82) {
+                ctx.fillStyle = "rgba(10, 10, 20, 0.95)";
+            } else {
+                ctx.fillStyle = "rgba(5, 5, 8, 0.35)"; // Retain visual light trails
+            }
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            // Translate rendering view relative to camera offset
+            ctx.translate(-camera.x, -camera.y);
+
+            // Draw Cyber Grid Boundary Floor Lines
+            ctx.strokeStyle = "rgba(0, 243, 255, 0.08)";
+            ctx.lineWidth = 1;
+            const step = 80;
+            for (let x = 0; x < arena.width; x += step) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, arena.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < arena.height; y += step) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(arena.width, y);
+                ctx.stroke();
+            }
+
+            // Draw Neon Boundary Wall Outlines
+            ctx.strokeStyle = "var(--neon-blue)";
+            ctx.lineWidth = 6;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = "var(--neon-blue)";
+            ctx.strokeRect(0, 0, arena.width, arena.height);
+
+            // Draw Floor Hazard Elements
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = "rgba(255, 0, 255, 0.04)";
+            ctx.beginPath();
+            ctx.arc(arena.width / 2, arena.height / 2, 280, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw Batteries
+            ctx.shadowBlur = 18;
+            ctx.shadowColor = "var(--neon-yellow)";
+            ctx.fillStyle = "var(--neon-yellow)";
+            for (let bId in batteries) {
+                const b = batteries[bId];
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, 7 + Math.sin(Date.now() / 150) * 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Draw Obstacle / Giant Glitch Duck NPC
+            if (currentEvent === 'giant_duck') {
+                drawDuck(giantDuckNPC.x, giantDuckNPC.y, "var(--neon-pink)", 4.5, false);
+            }
+
+            // Draw Network-connected cyber ducks
+            const scaleFactor = currentEvent === 'oversized' ? 2.2 : 1.0;
+            for (let id in players) {
+                const p = players[id];
+                let x = p.x;
+                let y = p.y;
+                if (id === myId) { x = myDuck.x; y = myDuck.y; }
+
+                drawDuck(x, y, p.color, scaleFactor, id === myId);
+                
+                // Render Username Metadata
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 13px 'Orbitron'";
+                ctx.textAlign = "center";
+                ctx.fillText(p.name, x, y - (28 * scaleFactor));
+                
+                // Render Dash Cooldown Indicator for user
+                if (id === myId) {
+                    const elapsed = Date.now() - myDuck.lastDashTime;
+                    if (elapsed < 1500) {
+                        ctx.fillStyle = "rgba(255,255,255,0.3)";
+                        ctx.fillRect(x - 20, y + 25, (elapsed / 1500) * 40, 4);
+                    }
+                }
+            }
+
+            ctx.restore();
+        }
+
+        function drawDuck(x, y, color, scale, isMe) {
+            ctx.save();
+            ctx.translate(x, y);
+            
+            // Apply Dynamic tilt angle based on velocity vector
+            if (isMe) {
+                ctx.rotate(myDuck.vx * 0.04);
+            }
+            
+            ctx.scale(scale, scale);
+            
+            ctx.shadowBlur = isMe ? 25 : 12;
+            ctx.shadowColor = color;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3.5;
+            
+            // Head
+            ctx.beginPath();
+            ctx.arc(10, -8, 9, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Eye
+            ctx.beginPath();
+            ctx.arc(11, -11, 2, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+
+            // Beak
+            ctx.beginPath();
+            ctx.moveTo(18, -10);
+            ctx.lineTo(27, -7);
+            ctx.lineTo(18, -4);
+            ctx.stroke();
+
+            // Body Frame
+            ctx.beginPath();
+            ctx.ellipse(0, 4, 16, 12, 0, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Tail Frame
+            ctx.beginPath();
+            ctx.moveTo(-15, 2);
+            ctx.lineTo(-24, -3);
+            ctx.lineTo(-12, 10);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+    </script>
+</body>
+</html>

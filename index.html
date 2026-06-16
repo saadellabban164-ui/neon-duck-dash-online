@@ -340,6 +340,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getDatabase, ref, set, onValue, update, remove, onDisconnect, get, child, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         // Firebase Configuration (Provided by User)
         const firebaseConfig = {
@@ -355,7 +356,14 @@
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
         const db = getDatabase(app);
+
+        // Sign in anonymously to ensure database access
+        signInAnonymously(auth).catch((error) => {
+            console.error("Auth Error:", error);
+            document.getElementById('error-msg').innerText = "Authentication failed: " + error.message;
+        });
 
         // --- Audio System (Web Audio API) ---
         let audioCtx;
@@ -407,6 +415,7 @@
         let myId = "duck_" + Math.random().toString(36).substr(2, 9);
         let myName = "";
         let currentRoom = null;
+        let roomHostId = null;
         let isHost = false;
         let gameState = 'menu'; // menu, lobby, playing, gameover
         let roomRef = null;
@@ -459,21 +468,31 @@
             joinRoomLogic(currentRoom, true);
         });
 
-        document.getElementById('btn-join-room').addEventListener('click', () => {
+        document.getElementById('btn-join-room').addEventListener('click', async () => {
             initAudio();
             myName = document.getElementById('player-name').value.trim() || "NeonDuck";
             const code = document.getElementById('room-code-input').value.trim().toUpperCase();
+            
             if (code.length === 6) {
-                // Check if room exists
-                get(child(ref(db), `rooms/${code}`)).then((snapshot) => {
-                    if (snapshot.exists() && snapshot.val().state !== 'playing') {
-                        currentRoom = code;
-                        isHost = false;
-                        joinRoomLogic(currentRoom, false);
+                try {
+                    // Check if room exists
+                    const snapshot = await get(ref(db, `rooms/${code}`));
+                    if (snapshot.exists()) {
+                        const roomData = snapshot.val();
+                        if (roomData.state !== 'playing') {
+                            currentRoom = code;
+                            isHost = false;
+                            joinRoomLogic(currentRoom, false);
+                        } else {
+                            showError("Room not found or game already started!");
+                        }
                     } else {
-                        showError("Room not found or game already started!");
+                        showError("Room not found!");
                     }
-                });
+                } catch (error) {
+                    console.error("Join Room Error:", error);
+                    showError("Error joining room. Check connection.");
+                }
             } else {
                 showError("Invalid room code!");
             }
@@ -489,7 +508,10 @@
                     host: myId,
                     currentEvent: 'normal',
                     matchEndTime: 0
-                });
+                }).catch(e => showError("Failed to create room: " + e.message));
+                
+                // Clean up the whole room if the host disconnects
+                onDisconnect(roomRef).remove();
             }
 
             // Set my player data
@@ -501,7 +523,7 @@
                 y: Math.random() * 600,
                 score: 0,
                 size: 1
-            });
+            }).catch(e => showError("Failed to join room: " + e.message));
 
             // Cleanup on disconnect
             onDisconnect(myPlayerRef).remove();
@@ -551,7 +573,8 @@
 
         document.getElementById('btn-ready').addEventListener('click', () => {
             if (!isHost && myPlayerRef && players[myId]) {
-                update(myPlayerRef, { ready: !players[myId].ready });
+                update(myPlayerRef, { ready: !players[myId].ready })
+                    .catch(err => showError("Error: " + err.message));
             }
         });
 
@@ -564,7 +587,7 @@
                         state: 'playing',
                         matchEndTime: endTime,
                         currentEvent: 'normal'
-                    });
+                    }).catch(err => showError("Error starting match: " + err.message));
                     generateInitialBatteries();
                 } else {
                     showError("Not all players are ready!");
@@ -610,6 +633,11 @@
                 updateLeaderboard();
             });
 
+            onValue(ref(db, `rooms/${currentRoom}/host`), (snap) => {
+                roomHostId = snap.val();
+                updateLobbyUI();
+            });
+
             onValue(ref(db, `rooms/${currentRoom}/batteries`), (snap) => {
                 batteries = snap.val() || {};
             });
@@ -633,7 +661,7 @@
             for (let id in players) {
                 const p = players[id];
                 const li = document.createElement('li');
-                const isHostStr = (id === currentRoom.host) ? '<span class="host-text">(HOST)</span>' : '';
+                const isHostStr = (id === roomHostId) ? '<span class="host-text">(HOST)</span>' : '';
                 const readyStr = p.ready ? '<span class="ready-text">READY</span>' : '<span style="color:#666">WAITING</span>';
                 li.innerHTML = `<span><span style="color:${p.color}">●</span> ${p.name} ${isHostStr}</span> ${readyStr}`;
                 playersList.appendChild(li);

@@ -127,6 +127,14 @@
             box-shadow: 0 0 20px var(--neon-pink), 0 0 40px var(--neon-pink);
         }
 
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-color: #555;
+            color: #555;
+            box-shadow: none;
+        }
+
         .btn-blue {
             border-color: var(--neon-blue);
             color: var(--neon-blue);
@@ -340,7 +348,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getDatabase, ref, set, onValue, update, remove, onDisconnect, get, child, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         // Firebase Configuration (Provided by User)
         const firebaseConfig = {
@@ -358,6 +366,24 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
+
+        const btnCreate = document.getElementById('btn-create-room');
+        const btnJoin = document.getElementById('btn-join-room');
+
+        // Disable buttons until Firebase securely connects
+        btnCreate.disabled = true;
+        btnJoin.disabled = true;
+        btnCreate.innerText = "Connecting...";
+        btnJoin.innerText = "Connecting...";
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                btnCreate.disabled = false;
+                btnJoin.disabled = false;
+                btnCreate.innerText = "Create Room";
+                btnJoin.innerText = "Join Room";
+            }
+        });
 
         // Sign in anonymously to ensure database access
         signInAnonymously(auth).catch((error) => {
@@ -491,7 +517,7 @@
                     }
                 } catch (error) {
                     console.error("Join Room Error:", error);
-                    showError("Error joining room. Check connection.");
+                    showError("Error: " + error.message);
                 }
             } else {
                 showError("Invalid room code!");
